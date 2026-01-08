@@ -1,0 +1,144 @@
+/* Auth Page Styles matching the requested design */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Roboto:wght@400;500&display=swap');
+
+.auth-page {
+    background-color: #000000;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 40px;
+    font-family: 'Roboto', sans-serif;
+    color: white;
+}
+
+.auth-container {
+    display: flex;
+    align-items: flex-start;
+    /* Character leans, input aligns top somewhat */
+    max-width: 1000px;
+    width: 100%;
+    gap: 50px;
+}
+
+.auth-left {
+    flex: 1;
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 50px;
+}
+
+.auth-character-img {
+    max-height: 500px;
+    object-fit: contain;
+}
+
+.auth-right {
+    flex: 1.2;
+    display: flex;
+    flex-direction: column;
+}
+
+.auth-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.5rem;
+    color: #7c8db0;
+    /* Blue/Lavender */
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.auth-subtitle {
+    text-align: center;
+    color: #ffffff;
+    font-size: 1.1rem;
+    margin-bottom: 40px;
+}
+
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.form-label {
+    color: #eace76;
+    /* Gold/Yellow */
+    font-size: 1rem;
+    font-weight: 500;
+}
+
+.form-row {
+    display: flex;
+    gap: 15px;
+}
+
+.form-input {
+    background: white;
+    border: none;
+    border-radius: 8px;
+    /* Rounded corners */
+    padding: 15px;
+    font-size: 1rem;
+    color: #333;
+    width: 100%;
+    outline: none;
+}
+
+.form-input::placeholder {
+    color: #888;
+}
+
+.btn-auth {
+    background-color: #7da0ca;
+    /* Periwinkle Blue */
+    color: #000;
+    border: none;
+    padding: 15px;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-top: 20px;
+    width: 100%;
+    cursor: pointer;
+}
+
+.btn-auth:hover {
+    background-color: #6b8bb5;
+}
+
+.toggle-auth {
+    margin-top: 20px;
+    text-align: center;
+    color: #ccc;
+    font-size: 0.9rem;
+}
+
+.toggle-link {
+    color: #7da0ca;
+    cursor: pointer;
+    text-decoration: underline;
+    margin-left: 5px;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .auth-container {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .auth-left {
+        padding-top: 0;
+    }
+
+    .auth-character-img {
+        max-height: 300px;
+    }
+}
