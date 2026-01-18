@@ -9,12 +9,16 @@ const server = http.createServer(app);
 const socket = require("socket.io");
 const io = socket(server, {
     cors: {
-        origin: "*",
+        origin: ["http://localhost:5173", "https://videoconnectt.netlify.app"],
         methods: ["GET", "POST"]
     }
 });
 
-app.use(require('cors')());
+app.use(require('cors')({
+    origin: ["http://localhost:5173", "https://videoconnectt.netlify.app"],
+    methods: ["GET", "POST", "OPTIONS"],
+    credentials: true
+}));
 app.use(express.json());
 
 // MongoDB connection disabled for restricted network compatibility (Demo Mode)
