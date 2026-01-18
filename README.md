@@ -1,4 +1,4 @@
-# Antigravity Meet - Real-Time Video Conferencing
+# VideoConnect Meet - Real-Time Video Conferencing
 
 A premium real-time video conferencing application built with React, WebRTC, and Socket.io.
 
