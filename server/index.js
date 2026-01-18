@@ -17,10 +17,17 @@ const io = socket(server, {
 app.use(require('cors')());
 app.use(express.json());
 
-const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017/videoconference";
+// MongoDB connection disabled for restricted network compatibility (Demo Mode)
+/*
 mongoose.connect(MONGO_URI)
-    .then(() => console.log("MongoDB connected"))
-    .catch(err => console.log(err));
+    .then(() => console.log("MongoDB connected successfully"))
+    .catch(err => {
+        console.error("MongoDB Connection Error Details:");
+        console.error(err);
+    });
+*/
+console.log("⚠️ Running in DEMO MODE (In-Memory Storage) due to network restrictions.");
+console.log("   Data will be lost when server restarts.");
 
 app.use('/api/auth', authRoutes);
 
