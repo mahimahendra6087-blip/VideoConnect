@@ -34,9 +34,14 @@ const Auth = () => {
             password: password
         };
 
-        // Use dynamic hostname to allow access from other devices on the LAN
-        // Use relative path - Vite proxy handles the rest!
-        const baseUrl = "";
+
+
+
+
+
+
+        // Use dynamic hostname with fallback to relative path (for local proxy)
+        const baseUrl = import.meta.env.VITE_SERVER_URL || "";
 
         try {
             const res = await fetch(`${baseUrl}${endpoint}`, {

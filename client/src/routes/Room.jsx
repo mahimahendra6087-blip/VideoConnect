@@ -54,9 +54,8 @@ const Room = () => {
     const [error, setError] = useState("");
 
     useEffect(() => {
-        // Use relative path - Vite proxy handles the rest!
-        // This works for localhost, LAN, and Tunnels automatically.
-        const socketUrl = "/";
+        // Use environment variable for production, fallback to relative for development proxy
+        const socketUrl = import.meta.env.VITE_SERVER_URL || "/";
         socketRef.current = io.connect(socketUrl);
 
         navigator.mediaDevices.getUserMedia({ video: true, audio: true })
