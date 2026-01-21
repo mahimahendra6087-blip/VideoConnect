@@ -55,6 +55,11 @@ const Room = () => {
 
     useEffect(() => {
         // Use environment variable for production, fallback to relative for development proxy
+
+
+
+
+
         const socketUrl = import.meta.env.VITE_SERVER_URL || "/";
         socketRef.current = io.connect(socketUrl);
 

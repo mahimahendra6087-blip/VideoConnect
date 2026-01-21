@@ -2,6 +2,7 @@ import React from 'react';
 import { v1 as uuid } from 'uuid';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import HeroIllustration from '../assets/hero-illustration.png';
 
 const CreateRoom = () => {
     const navigate = useNavigate();
@@ -27,7 +28,7 @@ const CreateRoom = () => {
             <div className="landing-left">
                 <h1 className="landing-title">Premium video meetings. Now free for everyone.</h1>
                 <p className="landing-subtitle">
-                    We re-engineered the service we built for secure business meetings, Google Meet, to make it free and available for all.
+                    We re-engineered the service we built for secure business meetings, CoLink, to make it free and available for all.
                 </p>
                 <div className="action-row">
                     <button className="btn-new-meeting" onClick={create}>
@@ -55,10 +56,10 @@ const CreateRoom = () => {
             <div className="landing-right">
                 {/* Placeholder for promotional carousel image */}
                 <img
-                    src="https://www.gstatic.com/meet/user_edu_get_a_link_light_90698cd7b4ca04d3005c962a3756c42d.svg"
-                    alt="Get a link you can share"
+                    src={HeroIllustration}
+                    alt="CoLink - Seamless Communication"
                     className="promo-image"
-                    style={{ maxHeight: '300px' }}
+                    style={{ maxHeight: '400px' }}
                 />
             </div>
         </div>

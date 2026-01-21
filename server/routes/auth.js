@@ -3,7 +3,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 // const User = require('../models/User'); // Disabled for Demo Mode
 
-const SECRET_KEY = process.env.JWT_SECRET || "videoconnect_secret_key";
+const SECRET_KEY = process.env.JWT_SECRET || "colink_secret_key";
 
 // In-Memory User Storage (Demo Mode)
 const localUsers = [];

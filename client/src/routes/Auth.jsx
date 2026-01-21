@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import AuthHero from '../assets/auth-hero.png';
 import '../AuthStyles.css';
 
 const Auth = () => {
@@ -67,9 +68,7 @@ const Auth = () => {
     return (
         <div className="auth-page">
             <div className="auth-container">
-                <div className="auth-left">
-                    <img src="/assets/character.png" alt="Character" className="auth-character-img" />
-                </div>
+                <img src={AuthHero} alt="CoLink Conference" className="auth-character-img" style={{ borderRadius: '20px', boxShadow: '0 8px 30px rgba(0,0,0,0.2)' }} />
 
                 <div className="auth-right">
                     <h1 className="auth-title">{isLogin ? "Welcome Back" : "Annual Conference"}</h1>

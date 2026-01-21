@@ -9,13 +9,13 @@ const server = http.createServer(app);
 const socket = require("socket.io");
 const io = socket(server, {
     cors: {
-        origin: ["http://localhost:5173", "https://videoconnectt.netlify.app"],
+        origin: ["http://localhost:5173", "https://colink.netlify.app"],
         methods: ["GET", "POST"]
     }
 });
 
 app.use(require('cors')({
-    origin: ["http://localhost:5173", "https://videoconnectt.netlify.app"],
+    origin: ["http://localhost:5173", "https://colink.netlify.app"],
     methods: ["GET", "POST", "OPTIONS"],
     credentials: true
 }));
