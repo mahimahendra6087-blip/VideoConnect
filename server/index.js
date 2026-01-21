@@ -19,6 +19,8 @@ for (const name of Object.keys(nets)) {
 const allowedOrigins = [
     "http://localhost:5173",
     "https://colink.netlify.app",
+    "https://colinkk.onrender.com",
+    "https://colink-1.onrender.com",
     process.env.ALLOWED_ORIGIN,
     ...localIps
 ].filter(Boolean);
