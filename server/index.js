@@ -7,10 +7,20 @@ require('dotenv').config();
 const app = express();
 const server = http.createServer(app);
 const socket = require("socket.io");
+const { networkInterfaces } = require('os');
+const nets = networkInterfaces();
+const localIps = [];
+for (const name of Object.keys(nets)) {
+    for (const net of nets[name]) {
+        if (net.family === 'IPv4' && !net.internal) localIps.push(`http://${net.address}:5173`);
+    }
+}
+
 const allowedOrigins = [
     "http://localhost:5173",
     "https://colink.netlify.app",
-    process.env.ALLOWED_ORIGIN
+    process.env.ALLOWED_ORIGIN,
+    ...localIps
 ].filter(Boolean);
 
 const io = socket(server, {
@@ -28,26 +38,20 @@ app.use(require('cors')({
 app.use(express.json());
 
 const MONGO_URI = process.env.MONGO_URI;
+global.isDemoMode = false;
 
 mongoose.connect(MONGO_URI, {
-    serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of 10s
+    serverSelectionTimeoutMS: 5000,
 })
-    .then(() => console.log("✅ MongoDB connected successfully"))
+    .then(() => {
+        console.log("✅ MongoDB connected successfully");
+        global.isDemoMode = false;
+    })
     .catch(err => {
-        console.error("❌ MongoDB Connection Error:");
-        console.error(err.message);
-        console.log("⚠️ Tip: Make sure your IP is whitelisted in MongoDB Atlas and port 27017 is not blocked by your network.");
+        console.error("❌ MongoDB Connection Error:", err.message);
+        console.log("⚠️ Switching to DEMO MODE (In-Memory Storage) for this session.");
+        global.isDemoMode = true;
     });
-
-// Middleware to check DB connection
-app.use((req, res, next) => {
-    if (mongoose.connection.readyState !== 1 && req.path.startsWith('/api')) {
-        return res.status(503).json({
-            message: "Database connection is not ready. Please check if your IP is whitelisted in MongoDB Atlas."
-        });
-    }
-    next();
-});
 
 app.use('/api/auth', authRoutes);
 

@@ -102,12 +102,22 @@ const Room = () => {
                     if (item) item.peer.signal(payload.signal);
                 });
 
+                socketRef.current.on("connect", () => {
+                    console.log("✅ Socket connected:", socketRef.current.id);
+                });
+
+                socketRef.current.on("connect_error", (err) => {
+                    console.error("❌ Socket Connection Error:", err.message);
+                });
+
                 socketRef.current.on("receive message", payload => {
+                    console.log("📥 Message received:", payload);
                     setMessages(prev => [...prev, { body: payload.message, sender: "User", time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }]);
-                    if (sidebarMode === 'none') setSidebarMode('chat'); // Auto open chat? Maybe just notification.
+                    setSidebarMode(current => current === 'none' ? 'chat' : current);
                 });
 
                 socketRef.current.on("user left", id => {
+                    console.log("👋 User left:", id);
                     const peerObj = peersRef.current.find(p => p.peerID === id);
                     if (peerObj) peerObj.peer.destroy();
                     const newPeers = peersRef.current.filter(p => p.peerID !== id);
@@ -265,9 +275,12 @@ const Room = () => {
     };
 
     const sendMessage = (e) => {
-        if (e.key === 'Enter' && msgInput) {
+        if (e && e.key !== 'Enter') return;
+
+        if (msgInput.trim()) {
             const msg = { message: msgInput, sender: socketRef.current.id };
             socketRef.current.emit("send message", msg);
+            console.log("📤 Message sent:", msg);
             setMessages(prev => [...prev, { body: msgInput, sender: "You", time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }]);
             setMsgInput("");
         }
@@ -364,14 +377,18 @@ const Room = () => {
                                             </div>
                                         ))}
                                     </div>
-                                    <div className="chat-input-area">
+                                    <div className="chat-input-area" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                         <input
                                             className="chat-input"
                                             placeholder="Send a message to everyone"
                                             value={msgInput}
                                             onChange={(e) => setMsgInput(e.target.value)}
                                             onKeyDown={sendMessage}
+                                            style={{ flex: 1 }}
                                         />
+                                        <button onClick={() => sendMessage()} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#1a73e8', display: 'flex', alignItems: 'center' }}>
+                                            <i className="material-icons">send</i>
+                                        </button>
                                     </div>
                                 </>
                             )}
