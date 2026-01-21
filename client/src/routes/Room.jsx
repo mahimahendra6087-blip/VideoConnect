@@ -12,18 +12,18 @@ import {
 } from "react-icons/fa";
 import { MdOutlineScreenShare, MdOutlineStopScreenShare } from "react-icons/md";
 
-const Video = ({ peer, userName, isScreenShare }) => {
+const Video = ({ stream, userName }) => {
     const ref = useRef();
 
     useEffect(() => {
-        peer.on("stream", stream => {
-            if (ref.current) ref.current.srcObject = stream;
-        });
-    }, [peer]);
+        if (stream && ref.current) {
+            ref.current.srcObject = stream;
+        }
+    }, [stream]);
 
     return (
-        <div className="video-card" style={{ width: isScreenShare ? '100%' : '400px' }}>
-            <video playsInline autoPlay ref={ref} style={{ transform: isScreenShare ? 'none' : 'scaleX(-1)' }} />
+        <div className="video-card">
+            <video playsInline autoPlay ref={ref} />
             <div className="user-name">{userName}</div>
         </div>
     );
@@ -55,11 +55,6 @@ const Room = () => {
 
     useEffect(() => {
         // Use environment variable for production, fallback to relative for development proxy
-
-
-
-
-
         const socketUrl = import.meta.env.VITE_SERVER_URL || "/";
         socketRef.current = io.connect(socketUrl);
 
@@ -76,6 +71,11 @@ const Room = () => {
                     const peers = [];
                     users.forEach(userID => {
                         const peer = createPeer(userID, socketRef.current.id, stream);
+
+                        peer.on("stream", remoteStream => {
+                            setPeers(prev => prev.map(p => p.peerID === userID ? { ...p, stream: remoteStream } : p));
+                        });
+
                         peersRef.current.push({
                             peerID: userID,
                             peer,
@@ -83,6 +83,7 @@ const Room = () => {
                         peers.push({
                             peerID: userID,
                             peer,
+                            stream: null // Init with null, updated via event
                         });
                     });
                     setPeers(peers);
@@ -90,11 +91,16 @@ const Room = () => {
 
                 socketRef.current.on("user joined", payload => {
                     const peer = addPeer(payload.signal, payload.callerID, stream);
+
+                    peer.on("stream", remoteStream => {
+                        setPeers(prev => prev.map(p => p.peerID === payload.callerID ? { ...p, stream: remoteStream } : p));
+                    });
+
                     peersRef.current.push({
                         peerID: payload.callerID,
                         peer,
                     });
-                    setPeers(users => [...users, { peerID: payload.callerID, peer }]);
+                    setPeers(users => [...users, { peerID: payload.callerID, peer, stream: null }]);
                 });
 
                 socketRef.current.on("receiving returned signal", payload => {
@@ -131,7 +137,7 @@ const Room = () => {
             });
 
         return () => {
-            // socketRef.current.disconnect();
+            if (socketRef.current) socketRef.current.disconnect();
         };
     }, []);
 
@@ -351,7 +357,7 @@ const Room = () => {
                         </div>
                         {peers.map((peer) => {
                             return (
-                                <Video key={peer.peerID} peer={peer.peer} userName={`User ${peer.peerID.substr(0, 4)} `} />
+                                <Video key={peer.peerID} stream={peer.stream} userName={`User ${peer.peerID.substr(0, 4)} `} />
                             );
                         })}
                     </div>
