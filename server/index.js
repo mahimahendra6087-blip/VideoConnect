@@ -27,19 +27,20 @@ app.use(require('cors')({
 }));
 app.use(express.json());
 
-// MongoDB connection disabled for restricted network compatibility (Demo Mode)
-/*
+const MONGO_URI = process.env.MONGO_URI;
+
 mongoose.connect(MONGO_URI)
     .then(() => console.log("MongoDB connected successfully"))
     .catch(err => {
         console.error("MongoDB Connection Error Details:");
         console.error(err);
     });
-*/
-console.log("⚠️ Running in DEMO MODE (In-Memory Storage) due to network restrictions.");
-console.log("   Data will be lost when server restarts.");
 
 app.use('/api/auth', authRoutes);
+
+app.get('/health', (req, res) => {
+    res.status(200).send('Server is healthy');
+});
 
 const PORT = process.env.PORT || 5000;
 
