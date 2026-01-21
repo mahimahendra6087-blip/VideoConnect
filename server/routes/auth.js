@@ -1,26 +1,36 @@
 const router = require('express').Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const mongoose = require('mongoose');
 const User = require('../models/User');
 
 const SECRET_KEY = process.env.JWT_SECRET || "colink_secret_key";
 
+const localUsers = [];
+
 router.post('/signup', async (req, res) => {
     try {
         const { username, password } = req.body;
-        console.log(`Attempting signup for: ${username}`);
+        const useDemo = global.isDemoMode || mongoose.connection.readyState !== 1;
+        console.log(`${useDemo ? '[DEMO]' : ''} Attempting signup for: ${username}`);
+
+        if (useDemo) {
+            const existingUser = localUsers.find(u => u.username === username);
+            if (existingUser) return res.status(400).json({ message: "User already exists" });
+
+            const hashedPassword = await bcrypt.hash(password, 10);
+            const user = { _id: Math.random().toString(36).substr(2, 9), username, password: hashedPassword };
+            localUsers.push(user);
+            const token = jwt.sign({ id: user._id, username: user.username }, SECRET_KEY, { expiresIn: '1h' });
+            return res.status(201).json({ token, user: { id: user._id, username: user.username } });
+        }
 
         const existingUser = await User.findOne({ username });
         if (existingUser) return res.status(400).json({ message: "User already exists" });
 
         const hashedPassword = await bcrypt.hash(password, 10);
-        const newUser = new User({
-            username,
-            password: hashedPassword
-        });
-
+        const newUser = new User({ username, password: hashedPassword });
         await newUser.save();
-        console.log(`User created: ${username}`);
 
         const token = jwt.sign({ id: newUser._id, username: newUser.username }, SECRET_KEY, { expiresIn: '1h' });
         res.status(201).json({ token, user: { id: newUser._id, username: newUser.username } });
@@ -33,7 +43,19 @@ router.post('/signup', async (req, res) => {
 router.post('/login', async (req, res) => {
     try {
         const { username, password } = req.body;
-        console.log(`Attempting login for: ${username}`);
+        const useDemo = global.isDemoMode || mongoose.connection.readyState !== 1;
+        console.log(`${useDemo ? '[DEMO]' : ''} Attempting login for: ${username}`);
+
+        if (useDemo) {
+            const user = localUsers.find(u => u.username === username);
+            if (!user) return res.status(404).json({ message: "User not found" });
+
+            const isPasswordCorrect = await bcrypt.compare(password, user.password);
+            if (!isPasswordCorrect) return res.status(400).json({ message: "Invalid credentials" });
+
+            const token = jwt.sign({ id: user._id, username: user.username }, SECRET_KEY, { expiresIn: '1h' });
+            return res.status(200).json({ token, user: { id: user._id, username: user.username } });
+        }
 
         const user = await User.findOne({ username });
         if (!user) return res.status(404).json({ message: "User not found" });
