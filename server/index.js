@@ -29,12 +29,25 @@ app.use(express.json());
 
 const MONGO_URI = process.env.MONGO_URI;
 
-mongoose.connect(MONGO_URI)
-    .then(() => console.log("MongoDB connected successfully"))
+mongoose.connect(MONGO_URI, {
+    serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of 10s
+})
+    .then(() => console.log("✅ MongoDB connected successfully"))
     .catch(err => {
-        console.error("MongoDB Connection Error Details:");
-        console.error(err);
+        console.error("❌ MongoDB Connection Error:");
+        console.error(err.message);
+        console.log("⚠️ Tip: Make sure your IP is whitelisted in MongoDB Atlas and port 27017 is not blocked by your network.");
     });
+
+// Middleware to check DB connection
+app.use((req, res, next) => {
+    if (mongoose.connection.readyState !== 1 && req.path.startsWith('/api')) {
+        return res.status(503).json({
+            message: "Database connection is not ready. Please check if your IP is whitelisted in MongoDB Atlas."
+        });
+    }
+    next();
+});
 
 app.use('/api/auth', authRoutes);
 
