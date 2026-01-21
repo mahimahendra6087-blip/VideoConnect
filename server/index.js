@@ -7,15 +7,21 @@ require('dotenv').config();
 const app = express();
 const server = http.createServer(app);
 const socket = require("socket.io");
+const allowedOrigins = [
+    "http://localhost:5173",
+    "https://colink.netlify.app",
+    process.env.ALLOWED_ORIGIN
+].filter(Boolean);
+
 const io = socket(server, {
     cors: {
-        origin: ["http://localhost:5173", "https://colink.netlify.app"],
+        origin: allowedOrigins,
         methods: ["GET", "POST"]
     }
 });
 
 app.use(require('cors')({
-    origin: ["http://localhost:5173", "https://colink.netlify.app"],
+    origin: allowedOrigins,
     methods: ["GET", "POST", "OPTIONS"],
     credentials: true
 }));
