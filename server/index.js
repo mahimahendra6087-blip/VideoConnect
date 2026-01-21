@@ -55,6 +55,17 @@ mongoose.connect(MONGO_URI, {
 
 app.use('/api/auth', authRoutes);
 
+app.get('/', (req, res) => {
+    res.send(`
+        <div style="font-family: sans-serif; text-align: center; margin-top: 50px;">
+            <h1 style="color: #1a73e8;">CoLink Backend is Live! 🚀</h1>
+            <p>The video conferencing server is running successfully.</p>
+            <p>Frontend should connect to this URL.</p>
+            <div style="margin-top: 20px; color: #5f6368;">Version 1.0.4</div>
+        </div>
+    `);
+});
+
 app.get('/health', (req, res) => {
     res.status(200).send('Server is healthy');
 });
