@@ -20,6 +20,14 @@ const Video = ({ stream, userName }) => {
         if (stream && ref.current) {
             console.log(`🎥 Setting stream for ${userName}`);
             ref.current.srcObject = stream;
+
+            // Explicitly try to play to handle autoplay restrictions
+            const playPromise = ref.current.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(error => {
+                    console.log("Autoplay prevented or interrupted:", error);
+                });
+            }
         } else if (!stream) {
             console.log(`⏳ Waiting for stream for ${userName}`);
         }
@@ -27,7 +35,12 @@ const Video = ({ stream, userName }) => {
 
     return (
         <div className="video-card">
-            <video playsInline autoPlay ref={ref} />
+            <video
+                playsInline
+                autoPlay
+                ref={ref}
+                className="remote-video"
+            />
             {!stream && <div className="video-placeholder">Connecting...</div>}
             <div className="user-name">{userName}</div>
         </div>
@@ -262,15 +275,31 @@ const Room = () => {
     }
 
     const toggleAudio = () => {
-        const enabled = userStream.current.getAudioTracks()[0].enabled;
-        userStream.current.getAudioTracks()[0].enabled = !enabled;
-        setMuted(enabled);
+        if (userStream.current) {
+            const audioTrack = userStream.current.getAudioTracks()[0];
+            if (audioTrack) {
+                const newEnabledState = !audioTrack.enabled;
+                audioTrack.enabled = newEnabledState;
+                setMuted(!newEnabledState);
+                console.log(`🎤 Microphone ${newEnabledState ? 'Enabled' : 'Disabled'}`);
+            } else {
+                alert("No microphone track found!");
+            }
+        }
     };
 
     const toggleVideo = () => {
-        const enabled = userStream.current.getVideoTracks()[0].enabled;
-        userStream.current.getVideoTracks()[0].enabled = !enabled;
-        setVideoOff(enabled);
+        if (userStream.current) {
+            const videoTrack = userStream.current.getVideoTracks()[0];
+            if (videoTrack) {
+                const newEnabledState = !videoTrack.enabled;
+                videoTrack.enabled = newEnabledState;
+                setVideoOff(!newEnabledState);
+                console.log(`📹 Camera ${newEnabledState ? 'Enabled' : 'Disabled'}`);
+            } else {
+                alert("No video track found!");
+            }
+        }
     };
 
     // Screen Sharing Logic
@@ -602,6 +631,17 @@ const Room = () => {
                     <button className={`round-btn ${isTranslating ? 'blue-active' : ''}`} onClick={toggleTranslation} title="Translate Telugu to English">
                         <FaLanguage />
                     </button>
+                    {!muted && (
+                        <div style={{
+                            position: 'absolute',
+                            bottom: '85px',
+                            background: '#34a853',
+                            height: '4px',
+                            width: '4px',
+                            borderRadius: '50%',
+                            boxShadow: '0 0 10px #34a853'
+                        }}></div>
+                    )}
                     <button className="round-btn" onClick={() => setShowInfo(!showInfo)}>
                         <FaInfoCircle />
                     </button>
