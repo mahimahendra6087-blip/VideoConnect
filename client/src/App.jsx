@@ -6,7 +6,10 @@ import { AuthProvider, useAuth } from "./context/AuthContext";
 
 const ProtectedRoute = ({ children }) => {
   const { user } = useAuth();
-  if (!user) return <Navigate to="/auth" />;
+  if (!user) {
+    // Save current location to redirect back after login
+    return <Navigate to="/auth" state={{ from: window.location.pathname }} />;
+  }
   return children;
 };
 

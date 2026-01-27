@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import AuthHero from '../assets/auth-hero.png';
 import '../AuthStyles.css';
 
@@ -14,6 +14,7 @@ const Auth = () => {
     const [error, setError] = useState("");
     const { login } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -58,7 +59,10 @@ const Auth = () => {
             }
 
             login(data.token, data.user);
-            navigate("/");
+
+            // Redirect to intended page or home
+            const from = location.state?.from || "/";
+            navigate(from);
 
         } catch (err) {
             setError(err.message);

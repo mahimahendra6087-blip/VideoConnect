@@ -8,7 +8,8 @@ import {
     FaVideo, FaVideoSlash,
     FaPhoneSlash,
     FaCommentAlt, FaUserFriends,
-    FaDesktop, FaInfoCircle
+    FaDesktop, FaInfoCircle,
+    FaLanguage
 } from "react-icons/fa";
 import { MdOutlineScreenShare, MdOutlineStopScreenShare } from "react-icons/md";
 
@@ -17,13 +18,17 @@ const Video = ({ stream, userName }) => {
 
     useEffect(() => {
         if (stream && ref.current) {
+            console.log(`🎥 Setting stream for ${userName}`);
             ref.current.srcObject = stream;
+        } else if (!stream) {
+            console.log(`⏳ Waiting for stream for ${userName}`);
         }
-    }, [stream]);
+    }, [stream, userName]);
 
     return (
         <div className="video-card">
             <video playsInline autoPlay ref={ref} />
+            {!stream && <div className="video-placeholder">Connecting...</div>}
             <div className="user-name">{userName}</div>
         </div>
     );
@@ -51,6 +56,13 @@ const Room = () => {
     const [messages, setMessages] = useState([]);
     const [msgInput, setMsgInput] = useState("");
 
+    // Translation & Captions
+    const [isTranslating, setIsTranslating] = useState(false);
+    const [teluguTranscript, setTeluguTranscript] = useState("");
+    const [captions, setCaptions] = useState("");
+    const [remoteCaptions, setRemoteCaptions] = useState(null); // { sender, translation, telugu }
+    const recognitionRef = useRef(null);
+
     const [error, setError] = useState("");
 
     useEffect(() => {
@@ -72,18 +84,30 @@ const Room = () => {
                     users.forEach(userID => {
                         const peer = createPeer(userID, socketRef.current.id, stream);
 
-                        peer.on("stream", remoteStream => {
-                            setPeers(prev => prev.map(p => p.peerID === userID ? { ...p, stream: remoteStream } : p));
-                        });
-
+                        // Track signals in Ref
                         peersRef.current.push({
                             peerID: userID,
                             peer,
                         });
+
+                        // Add to local list for initial state
                         peers.push({
                             peerID: userID,
                             peer,
-                            stream: null // Init with null, updated via event
+                            stream: null
+                        });
+
+                        // Important: Listen for stream
+                        peer.on("stream", remoteStream => {
+                            console.log(`📡 Received stream from ${userID}`);
+                            setPeers(allPeers => {
+                                return allPeers.map(p => {
+                                    if (p.peerID === userID) {
+                                        return { ...p, stream: remoteStream };
+                                    }
+                                    return p;
+                                });
+                            });
                         });
                     });
                     setPeers(peers);
@@ -92,15 +116,31 @@ const Room = () => {
                 socketRef.current.on("user joined", payload => {
                     const peer = addPeer(payload.signal, payload.callerID, stream);
 
-                    peer.on("stream", remoteStream => {
-                        setPeers(prev => prev.map(p => p.peerID === payload.callerID ? { ...p, stream: remoteStream } : p));
-                    });
-
                     peersRef.current.push({
                         peerID: payload.callerID,
                         peer,
                     });
-                    setPeers(users => [...users, { peerID: payload.callerID, peer, stream: null }]);
+
+                    // Initialize the new peer in state
+                    const peerObj = {
+                        peerID: payload.callerID,
+                        peer,
+                        stream: null
+                    };
+
+                    setPeers(users => [...users, peerObj]);
+
+                    peer.on("stream", remoteStream => {
+                        console.log(`📡 Received stream from joined user ${payload.callerID}`);
+                        setPeers(allPeers => {
+                            return allPeers.map(p => {
+                                if (p.peerID === payload.callerID) {
+                                    return { ...p, stream: remoteStream };
+                                }
+                                return p;
+                            });
+                        });
+                    });
                 });
 
                 socketRef.current.on("receiving returned signal", payload => {
@@ -126,9 +166,18 @@ const Room = () => {
                     console.log("👋 User left:", id);
                     const peerObj = peersRef.current.find(p => p.peerID === id);
                     if (peerObj) peerObj.peer.destroy();
-                    const newPeers = peersRef.current.filter(p => p.peerID !== id);
-                    peersRef.current = newPeers;
-                    setPeers(newPeers);
+
+                    peersRef.current = peersRef.current.filter(p => p.peerID !== id);
+                    setPeers(prev => prev.filter(p => p.peerID !== id));
+                });
+
+                socketRef.current.on("receive translation", payload => {
+                    console.log("📥 Translation received:", payload);
+                    setRemoteCaptions(payload);
+                    // Clear after 5 seconds of inactivity
+                    setTimeout(() => {
+                        setRemoteCaptions(current => (current && current.sender === payload.sender) ? null : current);
+                    }, 5000);
                 });
             })
             .catch(err => {
@@ -292,6 +341,97 @@ const Room = () => {
         }
     };
 
+    // Speech Translation Logic
+    useEffect(() => {
+        if (isTranslating) {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) {
+                alert("Speech Recognition is not supported in this browser. Please use Chrome.");
+                setIsTranslating(false);
+                return;
+            }
+
+            const recognition = new SpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.lang = 'te-IN'; // Telugu
+
+            recognition.onresult = async (event) => {
+                let interimTranscript = '';
+                let finalTranscript = '';
+
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    if (event.results[i].isFinal) {
+                        finalTranscript += event.results[i][0].transcript;
+                    } else {
+                        interimTranscript += event.results[i][0].transcript;
+                    }
+                }
+
+                const currentTelugu = finalTranscript || interimTranscript;
+                setTeluguTranscript(currentTelugu);
+
+                if (finalTranscript) {
+                    // Translate final transcript
+                    try {
+                        const response = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(finalTranscript)}&langpair=te|en`);
+                        const data = await response.json();
+                        const translation = data.responseData.translatedText;
+                        setCaptions(translation);
+
+                        // Broadcast translation to others
+                        socketRef.current.emit("send translation", {
+                            translation,
+                            telugu: finalTranscript,
+                            sender: socketRef.current.id
+                        });
+
+                        // Clear local captions after a delay
+                        setTimeout(() => {
+                            setCaptions("");
+                            setTeluguTranscript("");
+                        }, 5000);
+                    } catch (err) {
+                        console.error("Translation Error:", err);
+                    }
+                }
+            };
+
+            recognition.onerror = (event) => {
+                console.error("Speech Recognition Error:", event.error);
+                if (event.error === 'no-speech') {
+                    // It's okay, just keep going if possible
+                } else {
+                    setIsTranslating(false);
+                }
+            };
+
+            recognition.onend = () => {
+                if (isTranslating) recognition.start(); // Keep it alive
+            };
+
+            recognition.start();
+            recognitionRef.current = recognition;
+        } else {
+            if (recognitionRef.current) {
+                recognitionRef.current.stop();
+                recognitionRef.current = null;
+            }
+            setCaptions("");
+            setTeluguTranscript("");
+        }
+
+        return () => {
+            if (recognitionRef.current) {
+                recognitionRef.current.stop();
+            }
+        };
+    }, [isTranslating]);
+
+    const toggleTranslation = () => {
+        setIsTranslating(!isTranslating);
+    };
+
     return (
         <div className="room-container">
             {showInfo && (
@@ -342,6 +482,27 @@ const Room = () => {
                     </button>
                 </div>
             )}
+
+            {isTranslating && (teluguTranscript || captions) && (
+                <div className="captions-overlay">
+                    <div className="captions-content">
+                        <div className="captions-sender">You (Telugu ➔ English)</div>
+                        {teluguTranscript && <div className="telugu-captions">{teluguTranscript}</div>}
+                        {captions && <div className="english-captions">{captions}</div>}
+                    </div>
+                </div>
+            )}
+
+            {remoteCaptions && (
+                <div className="captions-overlay remote">
+                    <div className="captions-content">
+                        <div className="captions-sender">User {remoteCaptions.sender.substr(0, 4)} (Telugu ➔ English)</div>
+                        <div className="telugu-captions">{remoteCaptions.telugu}</div>
+                        <div className="english-captions">{remoteCaptions.translation}</div>
+                    </div>
+                </div>
+            )}
+
             <div className="main-area">
                 <div className="video-grid-container">
                     <div className="video-grid">
@@ -437,6 +598,9 @@ const Room = () => {
 
                     <button className={`round-btn ${isScreenSharing ? 'blue-active' : ''}`} onClick={toggleScreenShare} title="Present now">
                         {isScreenSharing ? <MdOutlineStopScreenShare /> : <MdOutlineScreenShare />}
+                    </button>
+                    <button className={`round-btn ${isTranslating ? 'blue-active' : ''}`} onClick={toggleTranslation} title="Translate Telugu to English">
+                        <FaLanguage />
                     </button>
                     <button className="round-btn" onClick={() => setShowInfo(!showInfo)}>
                         <FaInfoCircle />

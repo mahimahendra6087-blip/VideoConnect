@@ -114,6 +114,21 @@ io.on('connection', socket => {
         }
     });
 
+    socket.on("send translation", (payload) => {
+        const roomID = socketToRoom[socket.id];
+        if (users[roomID]) {
+            users[roomID].forEach(userId => {
+                if (userId !== socket.id) {
+                    io.to(userId).emit("receive translation", {
+                        translation: payload.translation,
+                        telugu: payload.telugu,
+                        sender: payload.sender
+                    });
+                }
+            });
+        }
+    });
+
     socket.on('disconnect', () => {
         const roomID = socketToRoom[socket.id];
         let room = users[roomID];
